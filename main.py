@@ -1,3 +1,4 @@
+import pandas as pd
 import requests
 
 
@@ -15,7 +16,7 @@ def query_info():
     return year
 
 
-def get_data(year):
+def get_data_facility_emissions(year):
     """
     Fetches data from the EPA API and stores it in an list of dictionaries.
     """
@@ -25,10 +26,29 @@ def get_data(year):
     return data
 
 
+def get_data_facility_info(year):
+    """
+    Fetches data from the EPA API and stores it in an list of dictionaries.
+    """
+    url = f"https://data.epa.gov/dmapservice/ghg.pub_dim_facility/year/equals/{year}"
+    response = requests.get(url)
+    data = response.json()
+    return data
+
+
+def data_to_df(data):
+    df = pd.DataFrame(data)
+    return df
+
+
 def main():
     year = query_info()
-    data = get_data(year)
-    print(data)
+    emissions_data = get_data_facility_emissions(year)
+    facility_data = get_data_facility_info(year)
+    em_df = data_to_df(emissions_data)
+    fac_df = data_to_df(facility_data)
+    print(em_df)
+    print(fac_df)
 
 
 if __name__ == "__main__":
