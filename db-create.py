@@ -35,7 +35,7 @@ cursor.execute(
         eggrt_facility_id INTEGER,
         emission_classification_code TEXT,
         emitted_co2_supplied TEXT,
-        facility_id INTEGER PRIMARY KEY,
+        facility_id INTEGER,
         facility_name TEXT,
         facility_types TEXT,
         frs_id TEXT,
@@ -58,7 +58,8 @@ cursor.execute(
         tribal_land_id TEXT,
         uu_rd_exempt TEXT,
         year INTEGER,
-        zip TEXT
+        zip TEXT,
+        PRIMARY KEY (facility_id, year)
     )
 """
 )
@@ -71,7 +72,7 @@ cursor.execute(
         ghg_gas_name TEXT,
         ghg_quantity REAL,
         reporting_year INTEGER,
-        FOREIGN KEY (facility_id) REFERENCES facility (facility_id)
+        FOREIGN KEY (facility_id, reporting_year) REFERENCES facility (facility_id, year)
     )
 """
 )

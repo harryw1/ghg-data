@@ -78,7 +78,10 @@ def insert_data_from_list(data, table_name):
     for row in data:
         columns = ", ".join(row.keys())
         placeholders = ", ".join("?" * len(row))
-        sql = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
+        sql = f"""
+            INSERT OR REPLACE INTO {table_name} ({columns})
+            VALUES ({placeholders})
+        """
         cursor.execute(sql, tuple(row.values()))
 
     conn.commit()
