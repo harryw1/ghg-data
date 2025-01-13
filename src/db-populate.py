@@ -6,6 +6,9 @@ import requests_cache
 def query_info():
     """
     Asks the user for a target year and returns it.
+
+    Returns:
+        int: The target year entered by the user.
     """
     while True:
         try:
@@ -22,7 +25,13 @@ def query_info():
 
 def get_data_facility_emissions(year):
     """
-    Fetches data from the EPA API and stores it in an list of dictionaries.
+    Fetches data from the EPA API and stores it in a list of dictionaries.
+
+    Args:
+        year (int): The target year for fetching emissions data.
+
+    Returns:
+        list: A list of dictionaries containing emissions data.
     """
     print("Fetching emissions data...")
     session = requests_cache.CachedSession("../emissions_cache")
@@ -34,7 +43,13 @@ def get_data_facility_emissions(year):
 
 def get_data_facility_info(year):
     """
-    Fetches data from the EPA API and stores it in an list of dictionaries.
+    Fetches data from the EPA API and stores it in a list of dictionaries.
+
+    Args:
+        year (int): The target year for fetching facility data.
+
+    Returns:
+        list: A list of dictionaries containing facility data.
     """
     print("Fetching facility data...")
     session = requests_cache.CachedSession("../facility_cache")
@@ -46,7 +61,13 @@ def get_data_facility_info(year):
 
 def get_c_subpart_data(year):
     """
-    Fetches data from the EPA API and stores it in an list of dictionaries.
+    Fetches data from the EPA API and stores it in a list of dictionaries.
+
+    Args:
+        year (int): The target year for fetching C subpart data.
+
+    Returns:
+        list: A list of dictionaries containing C subpart data.
     """
     print("Fetching C subpart data...")
     session = requests_cache.CachedSession("../c_subpart_cache")
@@ -58,7 +79,13 @@ def get_c_subpart_data(year):
 
 def get_d_subpart_data(year):
     """
-    Fetches data from the EPA API and stores it in an list of dictionaries.
+    Fetches data from the EPA API and stores it in a list of dictionaries.
+
+    Args:
+        year (int): The target year for fetching D subpart data.
+
+    Returns:
+        list: A list of dictionaries containing D subpart data.
     """
     print("Fetching D subpart data...")
     session = requests_cache.CachedSession("../d_subpart_cache")
@@ -71,6 +98,10 @@ def get_d_subpart_data(year):
 def insert_data_from_list(data, table_name):
     """
     Inserts data from a list of dictionaries into an SQLite table.
+
+    Args:
+        data (list): A list of dictionaries containing the data to be inserted.
+        table_name (str): The name of the table where data will be inserted.
     """
     conn = sqlite3.connect("../emissions_facility.db")
     cursor = conn.cursor()

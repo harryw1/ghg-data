@@ -1,10 +1,10 @@
 import sqlite3
 
-# Connect to the SQLite database (or create it if it doesn't exist)
+"""Connect to the SQLite database (or create it if it doesn't exist)."""
 conn = sqlite3.connect("../emissions_facility.db")
 cursor = conn.cursor()
 
-# Create the emissions table
+"""Create the emissions table."""
 cursor.execute(
     """
     CREATE TABLE IF NOT EXISTS emissions (
@@ -18,7 +18,7 @@ cursor.execute(
 """
 )
 
-# Create the facility table
+"""Create the facility table."""
 cursor.execute(
     """
     CREATE TABLE IF NOT EXISTS facility (
@@ -64,6 +64,7 @@ cursor.execute(
 """
 )
 
+"""Create the c_subpart table."""
 cursor.execute(
     """
     CREATE TABLE IF NOT EXISTS c_subpart (
@@ -72,11 +73,13 @@ cursor.execute(
         ghg_gas_name TEXT,
         ghg_quantity REAL,
         reporting_year INTEGER,
-        FOREIGN KEY (facility_id, reporting_year) REFERENCES facility (facility_id, year)
+        FOREIGN KEY (facility_id, reporting_year)
+            REFERENCES facility (facility_id, year)
     )
 """
 )
 
+"""Create the d_subpart table."""
 cursor.execute(
     """
     CREATE TABLE IF NOT EXISTS d_subpart (
@@ -90,6 +93,6 @@ cursor.execute(
 """
 )
 
-# Commit the changes and close the connection
+"""Commit the changes and close the connection."""
 conn.commit()
 conn.close()
