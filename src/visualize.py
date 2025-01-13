@@ -10,9 +10,6 @@ def query_info():
     """
     Asks the user for a target year and returns it.
 
-    Args:
-        None
-
     Returns:
         int: The target year chosen by the user.
 
@@ -20,45 +17,47 @@ def query_info():
         ValueError: If the user enters an invalid year.
     """
 
+    def is_valid_year(year):
+        return 1970 <= year <= 2023
+
     while True:
         try:
             year = int(input("Enter a year: "))
-            if year < 1970 or year > 2023:
+            if not is_valid_year(year):
                 print("Please enter a year between 1970 and 2023.")
                 exit(1)
-            break
+            return year
         except ValueError:
             print("Please enter a valid year.")
             exit(1)
-    return year
 
 
 def check_db():
     """
     Checks if the database exists and returns True if it does, otherwise exits.
 
-    Args:
-        None
-
     Returns:
         bool: Whether the database exists or not.
     """
 
-    # Check if database exists
-    if not os.path.exists("../emissions_facility.db"):
+    def db_exists():
+        return os.path.exists("../emissions_facility.db")
+
+    def db_not_empty(cursor):
+        return bool(cursor.execute("SELECT * FROM emissions").fetchall())
+
+    if not db_exists():
         print(
             "Database does not exist. Please run db-create.py to create the database."
         )
         exit(1)
 
-    # Connect to database and execute query
     conn = sqlite3.connect("../emissions_facility.db")
     cursor = conn.cursor()
-    if not cursor.execute("SELECT * FROM emissions").fetchall():
+    if not db_not_empty(cursor):
         print("Database is empty. Please run db-populate.py to populate the database.")
         exit(1)
 
-    # Return True if database exists
     return True
 
 
@@ -66,24 +65,18 @@ def load_data_facility_emissions():
     """
     Loads data from populated database and returns it as a pandas DataFrame.
 
-    Args:
-        None
-
     Returns:
         tuple: A tuple containing two DataFrames, 'emissions' and 'facility'.
     """
 
-    # Check if database exists
-    if check_db():
-        # Connect to database
+    def load_data_from_db():
         conn = sqlite3.connect("../emissions_facility.db")
-
-        # Load data from database
         emissions = pd.read_sql_query("SELECT * FROM emissions", conn)
         facility = pd.read_sql_query("SELECT * FROM facility", conn)
-
-        # Return DataFrames
         return emissions, facility
+
+    if check_db():
+        return load_data_from_db()
 
 
 def summarize_data(frame_a, frame_b):
@@ -93,16 +86,15 @@ def summarize_data(frame_a, frame_b):
     Args:
         frame_a (DataFrame): The first DataFrame to summarize.
         frame_b (DataFrame): The second DataFrame to summarize.
-
-    Returns:
-        None
     """
 
+    def print_summary(frame, name):
+        print(f"{name} data:")
+        print(frame.describe())
+
     print("Summarizing data...")
-    print("Emissions data:")
-    print(frame_a.describe())
-    print("Facility data:")
-    print(frame_b.describe())
+    print_summary(frame_a, "Emissions")
+    print_summary(frame_b, "Facility")
 
 
 def total_emissions_by_year(frame_a, frame_b, year):
@@ -117,14 +109,8 @@ def total_emissions_by_year(frame_a, frame_b, year):
     Returns:
         DataFrame: A DataFrame containing the total emissions by facility, year and gas.
     """
-
-    # Merge DataFrames
     merged = merge_frames(frame_a, frame_b)
-
-    # Calculate total emissions
     total_emissions = merged.groupby(["facility_id", "year_y", "gas_id"]).sum()
-
-    # Return total emissions
     return total_emissions
 
 
@@ -136,38 +122,80 @@ def visualize_data(frame_a, frame_b, year):
         frame_a (DataFrame): The DataFrame containing the emissions data.
         frame_b (DataFrame): The DataFrame containing the facility data.
         year (int): The target year to visualize data for.
-
-    Returns:
-        None
     """
 
-    # Merge DataFrames
-    merged = merge_frames(frame_a, frame_b)
+    def map_state_to_region(state, regions):
+        return next(
+            (region for region, states in regions.items() if state in states), "Other"
+        )
 
-    # Drop unnecessary rows from merged DataFrame
+    merged = merge_frames(frame_a, frame_b)
     merged = merged.drop(
         merged[
             (merged.gas_id != 1) & (merged.gas_id != 2) & (merged.gas_id != 3)
             | (merged.year_y != year)
         ].index
     )
+    print(merged.info())
 
-    # Set matplotlib theme
+    regions = {
+        "Northeast": ["CT", "ME", "MA", "NH", "RI", "VT", "NJ", "NY", "PA"],
+        "Midwest": [
+            "IL",
+            "IN",
+            "IA",
+            "KS",
+            "MI",
+            "MN",
+            "MO",
+            "NE",
+            "ND",
+            "OH",
+            "SD",
+            "WI",
+        ],
+        "South": [
+            "DE",
+            "FL",
+            "GA",
+            "MD",
+            "NC",
+            "SC",
+            "VA",
+            "DC",
+            "WV",
+            "AL",
+            "KY",
+            "MS",
+            "TN",
+            "AR",
+            "LA",
+            "OK",
+            "TX",
+        ],
+        "West": [
+            "AZ",
+            "CO",
+            "ID",
+            "MT",
+            "NV",
+            "NM",
+            "UT",
+            "WY",
+            "AK",
+            "CA",
+            "HI",
+            "OR",
+            "WA",
+        ],
+    }
+
+    merged["region"] = merged["state"].map(lambda x: map_state_to_region(x, regions))
+    aggregated_data = merged.groupby(["region"])["co2e_emission"].sum().reset_index()
+    aggregated_data = aggregated_data[aggregated_data.region != "Other"]
+
     sns.set_theme(style="whitegrid")
-
-    # Create histogram
-    sns.histplot(
-        merged,
-        x="year_y",
-        y="co2e_emission",
-        bins=30,
-        discrete=(True, False),
-        log_scale=(False, True),
-        cbar=True,
-        cbar_kws=dict(shrink=0.75),
-    )
-
-    # Display histogram
+    sns.barplot(data=aggregated_data, x="region", y="co2e_emission")
     plt.show()
 
 
@@ -182,41 +210,19 @@ def merge_frames(frame_a, frame_b):
     Returns:
         DataFrame: The merged DataFrame.
     """
-
-    # Merge DataFrames
     return pd.merge(frame_a, frame_b, on="facility_id")
 
 
 def main():
     """
     Main function that runs the program.
-
-    Args:
-        None
-
-    Returns:
-        None
     """
-
-    # Check if database exists
     check_db()
-
-    # Load data from populated database
     emissions, facility = load_data_facility_emissions()
-
-    # Summarize data
     summarize_data(emissions, facility)
-
-    # Ask user for target year
     year = query_info()
-
-    # Calculate total emissions by year
     total_emissions = total_emissions_by_year(emissions, facility, year)
-
-    # Print total emissions
     print(total_emissions)
-
-    # Visualize data for given year
     visualize_data(emissions, facility, year)
 
 
